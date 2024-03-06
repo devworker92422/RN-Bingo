@@ -1,7 +1,40 @@
+import { priceStep1, priceStep5, priceStep10, priceStep20 } from "../config";
 
-import { sealedCount } from "../config";
+export const getPriceStep = (price) => {
+    switch (price) {
+        case 1:
+            return priceStep1;
+        case 5:
+            return priceStep5;
+        case 10:
+            return priceStep10;
+        case 20:
+            return priceStep20;
+        default:
+            return [];
+    }
+}
 
-export const generateWinner = (total, winnerCount) => {
+export const getWinAmount = (totalAmount, priceStep) => {
+    let tmp = totalAmount;
+    let count = 0;
+    let price = [];
+    let stepCount = priceStep.length;
+    while (1) {
+        if (tmp >= priceStep[0] && tmp <= priceStep[stepCount - 1]) {
+            price.push(tmp);
+            count++;
+            break;
+        } else {
+            tmp -= priceStep[count % stepCount];
+            price.push(priceStep[count % stepCount]);
+            count++;
+        }
+    }
+    return price;
+}
+
+export const generateRandArray = (total) => {
     let numbers = [];
     for (let i = 0; i < total; i++)
         numbers.push(i);
@@ -13,12 +46,7 @@ export const generateWinner = (total, winnerCount) => {
             numbers[current] = numbers[top];
             numbers[top] = tmp;
         }
-    const winners = numbers.slice(0, winnerCount);
-    const sealed = numbers.slice(winnerCount, sealedCount + winnerCount);
-    return {
-        winnerList: winners,
-        sealedList: sealed
-    };
+    return numbers;
 }
 
 export const randomIntFromInterval = (min, max) => {

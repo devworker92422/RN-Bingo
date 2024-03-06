@@ -47,13 +47,12 @@ const MainScreen = (props) => {
                 style: 'cancel',
             },
         ]);
-        props.navigation.navigate('sealed');
     }
 
     return (
         <View style={styles.container}>
             {
-                boardSquares.length != 0 ? (
+                boardSquares.length > 0 && finishFlag == false ? (
                     <View style={styles.settingGroup}>
                         <View style={styles.priceBar}>
                             <Text variant='headlineLarge' style={styles.fontBold}> ${price}</Text>

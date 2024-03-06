@@ -26,16 +26,14 @@ const PunchBoardScreen = (props) => {
     const dispatch = useDispatch();
     const screenWidth = Dimensions.get("screen").width;
     const screenHeight = Dimensions.get("screen").height;
-    const { boardSquares, winnerList, sealedList, price, boardType } = useSelector(state => state.setting);
-
-    // const [tmpWinnerList, setTmpWinnerList] = useState([...winnerList]);
-    // const [tmpSealedList, setTmpSealedList] = useState([...sealedList]);
+    const { boardSquares, price, boardType } = useSelector(state => state.setting);
     const [squareSize, setSquareSize] = useState(0);
     const [curBoardSquares, setCurBoardSquares] = useState([...boardSquares]);
     const [currentSquare, setCurrentSquare] = useState();
     const [sealedName, setSealedName] = useState("");
     const [sealedNameList, setSealedLNameist] = useState([]);
     const [visible, setVisible] = useState(false);
+    const [count, setCount] = useState(0);
 
     const showToastWithGravity = (flag) => {
         let str = flag ? 'Success' : 'Failure';
@@ -45,19 +43,16 @@ const PunchBoardScreen = (props) => {
             ToastAndroid.CENTER,
         );
     };
+
     const onPressSquare = (rowVal, colVal) => {
         let tmpBoardSquares = JSON.parse(JSON.stringify(curBoardSquares));
+        let currentID = tmpBoardSquares[rowVal][colVal].squareID;
         if (tmpBoardSquares[rowVal][colVal].isEverted == true)
             return;
+        setCurrentSquare(tmpBoardSquares[rowVal][colVal].squareID);
         if (tmpBoardSquares[rowVal][colVal].isSealed) {
-            setCurrentSquare(tmpBoardSquares[rowVal][colVal].squareID);
             setVisible(true);
         } else {
-            // if (tmpBoardSquares[rowVal][colVal].isWinner) {
-            //     showToastWithGravity(true);
-            // } else {
-            //     showToastWithGravity(false);
-            // }
             tmpBoardSquares[rowVal][colVal].isEverted = true;
             setCurBoardSquares([...tmpBoardSquares]);
             dispatch(settingAction({ type: 'boardSquares', data: tmpBoardSquares }));
@@ -146,7 +141,7 @@ const PunchBoardScreen = (props) => {
                             < View key={i} style={styles.squareRow} >
                                 {
                                     row.map((square, j) => (
-                                        <TouchableOpacity onPress={() => { onPressSquare(i, j) }} key={j} style={[styles.square, { justifyContent: 'center', alignItems: 'center', height: squareSize, width: squareSize, backgroundColor: square.isEverted ? 'white' : square.bgColor }]} >
+                                        <TouchableOpacity key={j} onPress={() => { onPressSquare(i, j) }} style={[styles.square, { justifyContent: 'center', alignItems: 'center', height: squareSize, width: squareSize, backgroundColor: square.isEverted ? 'white' : square.bgColor }]}>
                                             {
                                                 square.isEverted && !square.isWinner && !square.isSealed ? (
                                                     <Image source={require('../img/cross.png')} style={{ height: (squareSize - 15), width: (squareSize - 15), margin: 5 }} />
@@ -155,8 +150,7 @@ const PunchBoardScreen = (props) => {
                                             {
                                                 square.isEverted && square.isWinner ? (
 
-                                                    <Text variant="displayMedium" style={[styles.priceTxt]} >${price}</Text>
-                                                    // <Image source={require('./img/check.png')} style={{ height: (squareSize - 15), width: (squareSize - 15), margin: 5 }} />
+                                                    <Text variant="headlineSmall" style={[styles.priceTxt]} >${square.value}</Text>
                                                 ) : null
                                             }
                                             {

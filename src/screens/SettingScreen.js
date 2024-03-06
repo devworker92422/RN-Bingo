@@ -7,27 +7,32 @@ import {
     Modal,
     Portal,
     PaperProvider,
+
     RadioButton
 } from 'react-native-paper';
 import { settingAction } from '../features/SettingSlice';
-import { generateWinner } from '../helper';
-import { colorPattern, BoardList, sealedRate, sealedCount } from '../config';
+import { generateRandArray, getPriceStep, getWinAmount } from '../helper';
+import { colorPattern, BoardList, profitList, priceList, sealedRate, sealedCount } from '../config';
 
 const SettingScreen = (props) => {
     const dispatch = useDispatch();
+    const [priceID, setPriceID] = useState(0);
+    const [boardID, setBoardID] = useState(0);
+    const [profitID, setProfitID] = useState(0);
     const [price, setPrice] = useState(null);
     const [boardType, setBoardType] = useState(null);
     const [profit, setProfit] = useState(null);
     const [winner, setWinner] = useState(null);
     const [profitAmount, setProfitAmount] = useState(null);
     const [sealedAmount, setSealedAmount] = useState(null);
+    const [winAmounts, setWinAmounts] = useState([]);
     const [priceModal, setPriceModal] = useState(false);
     const [boardModal, setBoardModal] = useState(false);
     const [profitModal, setProfitModal] = useState(false);
 
     const onPressSaveBtn = () => {
-        const tmpBoard = [];
-        let tmpBoardRow = [];
+        let tmpBoard = [];
+        let tmpBoardChunks = [];
         if (price == null) {
             alert('Please choose the price per square');
             return;
@@ -40,41 +45,37 @@ const SettingScreen = (props) => {
             alert('Please choose profit rate');
             return;
         }
-        const { winnerList, sealedList } = generateWinner(boardType.count, winner);
+        const tmp_number_arr = generateRandArray(boardType.count);
         for (let i = 0; i < boardType.count; i++) {
             let tmpSquare = {
-                squareID: i,
+                squareID: tmp_number_arr[i],
                 isEverted: false,
-                bgColor: colorPattern[(i % 3)],
+                isSealed: false,
+                isWinner: false,
+                value: 0,
+                bgColor: colorPattern[(tmp_number_arr[i] % colorPattern.length)],
             }
-            let winnerFlag = winnerList.find((w) => {
-                return w == i;
-            });
-            let sealedFlag = sealedList.find((s) => {
-                return s == i;
-            });
-            tmpSquare['isWinner'] = winnerFlag == undefined ? false : true;
-            tmpSquare['isSealed'] = sealedFlag == undefined ? false : true;
-            if (tmpSquare['isWinner'])
-                tmpSquare['bgImage'] = './check.png';
-            if (tmpSquare['isSealed'])
-                tmpSquare['bgImage'] = './sealed.png';
-            if (i % boardType.col == (boardType.col - 1)) {
-                tmpBoardRow.push(tmpSquare);
-                tmpBoard.push(tmpBoardRow);
-                tmpBoardRow = [];
-            } else {
-                tmpBoardRow.push(tmpSquare);
+            if (i < sealedCount)
+                tmpSquare['isSealed'] = true;
+            if (i > sealedCount && i < (sealedCount + winAmounts.length)) {
+                tmpSquare['isWinner'] = true;
+                tmpSquare['value'] = winAmounts[i - sealedCount];
             }
+            tmpBoard.push(tmpSquare);
+        }
+        tmpBoard.sort((a, b) => {
+            return a.squareID - b.squareID;
+        });
+        for (let i = 0; i < tmpBoard.length; i += boardType.row) {
+            tmpBoardChunks.push(tmpBoard.slice(i, i + boardType.row));
         }
         dispatch(settingAction({ type: 'price', data: Number(price) }));
         dispatch(settingAction({ type: 'profit', data: Number(profit) }));
         dispatch(settingAction({ type: 'boardType', data: boardType }));
         dispatch(settingAction({ type: 'winnerCount', data: winner }));
+        dispatch(settingAction({ type: 'finishFlag', data: false }));
         dispatch(settingAction({ type: 'sealedAmount', data: sealedAmount }));
-        dispatch(settingAction({ type: 'winnerList', data: winnerList }));
-        dispatch(settingAction({ type: 'sealedList', data: sealedList }));
-        dispatch(settingAction({ type: 'boardSquares', data: tmpBoard }));
+        dispatch(settingAction({ type: 'boardSquares', data: tmpBoardChunks }));
         props.navigation.navigate('main');
     }
 
@@ -82,20 +83,35 @@ const SettingScreen = (props) => {
         props.navigation.navigate('main');
     }
 
-    const onPressRadioBtnOfBoardType = (index) => {
-        setBoardType(BoardList[index]);
+    const onPressSaveBtnOfPriceModal = () => {
+        setPrice(priceList[priceID]);
+        setPriceModal(false);
+    }
+
+    const onPressSaveBtnOfBoardTypeModal = () => {
+        setBoardType(BoardList[boardID]);
+        setBoardModal(false);
+    }
+
+    const onPressSaveBtnOfProfitModal = () => {
+        setProfit(profitList[profitID]);
+        setProfitModal(false);
     }
 
     useEffect(() => {
-        if (boardType != null && profit != null) {
-            let tmpWinner = Math.floor((boardType.count - sealedCount) * (100 - profit) / 100);
-            let tmpProfit = (boardType.count - tmpWinner - sealedCount) * price;
-            let tmpSealedAmount = Math.floor(tmpProfit * sealedRate / 100);
-            setWinner(tmpWinner);
-            setProfitAmount(tmpProfit - tmpSealedAmount);
+        if (boardType != null && profit != null && price != null) {
+            let totalAmount = boardType.count * price;
+            let tmpProfitAmount = Math.floor(totalAmount * profit / 100);
+            let tmpSealedAmount = Math.floor(totalAmount * sealedRate / 100);
+            let winAmount = totalAmount - tmpProfitAmount - tmpSealedAmount;
+            const curPriceStep = getPriceStep(Number(price));
+            const winAmountArr = getWinAmount(winAmount, curPriceStep);
+            setWinAmounts([...winAmountArr]);
+            setWinner(winAmountArr.length);
+            setProfitAmount(tmpProfitAmount);
             setSealedAmount(tmpSealedAmount);
         }
-    }, [boardType, profit])
+    }, [boardType, profit, price])
 
     return (
         <PaperProvider>
@@ -107,34 +123,39 @@ const SettingScreen = (props) => {
                 <Portal>
                     <Modal onDismiss={() => { setPriceModal(false) }} contentContainerStyle={styles.modal} visible={priceModal} >
                         <Text variant='titleLarge'>Choose the Price per Square</Text>
-                        <RadioButton.Group value={price} onValueChange={value => setPrice(value)} >
-                            <RadioButton.Item label="$1" value="1" />
-                            <RadioButton.Item label="$5" value="5" />
-                            <RadioButton.Item label="$10" value="10" />
-                        </RadioButton.Group>
-                        <Button mode="contained" onPress={() => { setPriceModal(false) }}>Save</Button>
+                        {
+                            priceList.map((a, index) => (
+                                <TouchableOpacity key={index} onPress={() => { setPriceID(index) }} style={styles.radioBtn}>
+                                    <Text variant='titleLarge' style={styles.txtBlod}>${a}</Text>
+                                    <RadioButton onPress={() => { setPriceID(index) }} status={index === priceID ? 'checked' : 'unchecked'} value={a} />
+                                </TouchableOpacity>
+                            ))
+                        }
+                        <Button mode="contained" onPress={onPressSaveBtnOfPriceModal}>Save</Button>
                     </Modal>
                     <Modal onDismiss={() => { setBoardModal(false) }} contentContainerStyle={styles.modal} visible={boardModal}>
                         <Text variant='titleLarge'>Choose the Board Type</Text>
-                        <RadioButton.Group value={boardType ? boardType.count : null} >
-                            {
-                                BoardList.map((board, i) => (
-                                    <RadioButton.Item key={i} label={board.count + " (" + board.row + " * " + board.col + ")"} value={board.count} onPress={() => { onPressRadioBtnOfBoardType(i) }} />
-                                ))
-                            }
-                        </RadioButton.Group>
-                        <Button mode="contained" onPress={() => { setBoardModal(false) }}>Save</Button>
+                        {
+                            BoardList.map((a, index) => (
+                                <TouchableOpacity key={index} onPress={() => { setBoardID(index) }} style={styles.radioBtn}>
+                                    <Text variant='titleLarge' style={styles.txtBlod}>{a.count + " (" + a.row + " * " + a.col + ")"}</Text>
+                                    <RadioButton onPress={() => { setBoardID(index) }} status={index === boardID ? 'checked' : 'unchecked'} />
+                                </TouchableOpacity>
+                            ))
+                        }
+                        <Button mode="contained" onPress={onPressSaveBtnOfBoardTypeModal}>Save</Button>
                     </Modal>
                     <Modal onDismiss={() => { setProfitModal(false) }} contentContainerStyle={styles.modal} visible={profitModal}>
                         <Text variant='titleLarge'>Choose the Profit</Text>
-                        <RadioButton.Group value={profit} onValueChange={value => setProfit(value)} >
-                            <RadioButton.Item label="5%" value="5" />
-                            <RadioButton.Item label="10%" value="10" />
-                            <RadioButton.Item label="15%" value="15" />
-                            <RadioButton.Item label="20%" value="20" />
-                            <RadioButton.Item label="25%" value="25" />
-                        </RadioButton.Group>
-                        <Button mode="contained" onPress={() => { setProfitModal(false) }}>Save</Button>
+                        {
+                            profitList.map((a, index) => (
+                                <TouchableOpacity key={index} onPress={() => { setProfitID(index) }} style={styles.radioBtn}>
+                                    <Text variant='titleLarge' style={styles.txtBlod}>{a + " %"}</Text>
+                                    <RadioButton onPress={() => { setProfitID(index) }} status={index === profitID ? 'checked' : 'unchecked'} />
+                                </TouchableOpacity>
+                            ))
+                        }
+                        <Button mode="contained" onPress={onPressSaveBtnOfProfitModal}>Save</Button>
                     </Modal>
                 </Portal>
                 <TouchableOpacity style={styles.settingItem} onPress={() => { setBoardModal(true) }} >
@@ -164,7 +185,7 @@ const SettingScreen = (props) => {
                     </View>
                 </View>
             </View>
-        </PaperProvider>
+        </PaperProvider >
 
     )
 }
@@ -212,6 +233,16 @@ const styles = StyleSheet.create({
         paddingTop: 20,
         paddingBottom: 20,
         marginTop: 20
+    },
+    radioBtn: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 10
+    },
+    txtBlod: {
+        fontWeight: '700'
     }
 })
 

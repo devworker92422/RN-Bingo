@@ -7,8 +7,6 @@ const initialState = {
     sealedAmount: 0,
     finishFlag: false,
     boardType: {},
-    winnerList: [],
-    sealedList: [],
     boardSquares: []
 };
 
