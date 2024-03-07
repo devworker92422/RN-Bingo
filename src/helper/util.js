@@ -25,7 +25,11 @@ export const getWinAmount = (totalAmount, priceStep) => {
             price.push(tmp);
             count++;
             break;
-        } else {
+        } else if (tmp < priceStep[0]) {
+            price[0] += tmp;
+            break;
+        }
+        else {
             tmp -= priceStep[count % stepCount];
             price.push(priceStep[count % stepCount]);
             count++;

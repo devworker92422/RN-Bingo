@@ -24,11 +24,6 @@ export const BoardList = [
         col: 10,
         count: 250
     },
-    {
-        row: 20,
-        col: 15,
-        count: 300
-    },
 ];
 export const priceStep1 = [10, 15, 20];
 export const priceStep5 = [25, 30, 35, 40, 45, 50];

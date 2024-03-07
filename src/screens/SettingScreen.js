@@ -66,8 +66,8 @@ const SettingScreen = (props) => {
         tmpBoard.sort((a, b) => {
             return a.squareID - b.squareID;
         });
-        for (let i = 0; i < tmpBoard.length; i += boardType.row) {
-            tmpBoardChunks.push(tmpBoard.slice(i, i + boardType.row));
+        for (let i = 0; i < tmpBoard.length; i += boardType.col) {
+            tmpBoardChunks.push(tmpBoard.slice(i, i + boardType.col));
         }
         dispatch(settingAction({ type: 'price', data: Number(price) }));
         dispatch(settingAction({ type: 'profit', data: Number(profit) }));
