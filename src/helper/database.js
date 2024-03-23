@@ -108,7 +108,6 @@ export const readAllSetting = async (db) => {
                 sql,
                 [],
                 (tx, resultSet) => {
-                    console.log("all setting count, ", resultSet.rows.length)
                     for (let i = 0; i < resultSet.rows.length; i++) {
                         tmp.push(resultSet.rows.item(i))
                     }

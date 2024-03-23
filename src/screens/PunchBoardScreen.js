@@ -40,11 +40,12 @@ const PunchBoardScreen = (props) => {
     const screenWidth = Dimensions.get("screen").width;
     const screenHeight = Dimensions.get("screen").height;
     const { boardSquares, price, boardType, curSettingID } = useSelector(state => state.setting);
+    const { sealedList } = useSelector(state => state.sealed);
     const [squareSize, setSquareSize] = useState(0);
     const [curBoardSquares, setCurBoardSquares] = useState([...boardSquares]);
     const [currentSquare, setCurrentSquare] = useState();
     const [sealedName, setSealedName] = useState("");
-    const [sealedNameList, setSealedLNameist] = useState([]);
+    const [sealedNameList, setSealedLNameist] = useState([...sealedList]);
     const [visible, setVisible] = useState(false);
     const [count, setCount] = useState(0);
 

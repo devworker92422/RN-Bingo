@@ -21,8 +21,6 @@ import {
     deleteExcutedBoard,
     deleteExcutedSeald,
     finishCurrentGame,
-    insertNewSealedName,
-    dropTable
 } from '../helper/database';
 import { DB_FILE_NAME } from '../config';
 
@@ -77,20 +75,17 @@ const MainScreen = (props) => {
     }
 
     const onPressExit = async () => {
-        let tmp = await readSealedNames(db, 1);
-        console.log("all setting", tmp)
-        // setPreviousSetting(tmp);
-        // createUserTable();
-        // Alert.alert('Bingo', 'Exit Game', [
-        //     {
-        //         text: 'OK',
-        //         onPress: () => BackHandler.exitApp(),
-        //     },
-        //     {
-        //         text: 'Cancel',
-        //         style: 'cancel',
-        //     },
-        // ]);
+        createUserTable();
+        Alert.alert('Bingo', 'Exit Game', [
+            {
+                text: 'OK',
+                onPress: () => BackHandler.exitApp(),
+            },
+            {
+                text: 'Cancel',
+                style: 'cancel',
+            },
+        ]);
     }
 
     const setPreviousSetting = (setting) => {
@@ -113,7 +108,7 @@ const MainScreen = (props) => {
                 dispatch(settingAction({ type: 'boardSquares', data: tmpBoardChunks }));
                 readSealedNames(db, setting.id)
                     .then((tmpSealed) => {
-                        dispatch(sealedAction({ type: 'sealedList', data: tmpSealedName }));
+                        dispatch(sealedAction({ type: 'sealedList', data: tmpSealed }));
                     });
             });
     }

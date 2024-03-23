@@ -8,7 +8,6 @@ import {
     SafeAreaView,
     Image,
     TouchableOpacity,
-    BackHandler
 } from "react-native";
 
 import {
@@ -62,10 +61,6 @@ const SealedScreen = (props) => {
         dispatch(settingAction({ type: 'finishFlag', data: true }));
     }
 
-    const onPressExit = () => {
-        BackHandler.exitApp()
-    }
-
     const onPressNewSetting = () => {
         props.navigation.navigate('setting');
     }
@@ -107,7 +102,6 @@ const SealedScreen = (props) => {
                         <View style={styles.modalBtnGroup}>
                             <Button mode="outlined" style={styles.btnWidth} onPress={onPressNewSetting}><Text variant="titleLarge">New Setting</Text></Button>
                             <Button mode="contained" style={styles.btnWidth} onPress={onPressMainMenu}><Text variant="titleLarge">Main Menu</Text></Button>
-                            <Button mode="contained-tonal" style={styles.btnWidth} onPress={onPressExit}><Text variant="titleLarge">Exit</Text></Button>
                         </View>
                     </Modal>
                 </Portal>
