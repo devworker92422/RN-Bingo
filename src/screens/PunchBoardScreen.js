@@ -19,14 +19,27 @@ import {
     TextInput,
     Button
 } from "react-native-paper";
+import SQLite from 'react-native-sqlite-storage';
+import { updateBoardSquare, insertNewSealedName } from "../helper/database";
 import { settingAction } from "../features/SettingSlice";
 import { sealedAction } from "../features/SealedSlice";
+import { DB_FILE_NAME } from "../config";
+
+const db = SQLite.openDatabase(
+    {
+        name: DB_FILE_NAME,
+        location: 'default'
+    },
+    () => { console.log("Database connected!") }, //on success
+    error => console.log("Database error", error) //on error
+)
+
 
 const PunchBoardScreen = (props) => {
     const dispatch = useDispatch();
     const screenWidth = Dimensions.get("screen").width;
     const screenHeight = Dimensions.get("screen").height;
-    const { boardSquares, price, boardType } = useSelector(state => state.setting);
+    const { boardSquares, price, boardType, curSettingID } = useSelector(state => state.setting);
     const [squareSize, setSquareSize] = useState(0);
     const [curBoardSquares, setCurBoardSquares] = useState([...boardSquares]);
     const [currentSquare, setCurrentSquare] = useState();
@@ -49,11 +62,12 @@ const PunchBoardScreen = (props) => {
         let currentID = tmpBoardSquares[rowVal][colVal].squareID;
         if (tmpBoardSquares[rowVal][colVal].isEverted == true)
             return;
-        setCurrentSquare(tmpBoardSquares[rowVal][colVal].squareID);
+        setCurrentSquare(currentID);
         if (tmpBoardSquares[rowVal][colVal].isSealed) {
             setVisible(true);
         } else {
             tmpBoardSquares[rowVal][colVal].isEverted = true;
+            updateBoardSquare(db, curSettingID, tmpBoardSquares[rowVal][colVal]);
             setCurBoardSquares([...tmpBoardSquares]);
             dispatch(settingAction({ type: 'boardSquares', data: tmpBoardSquares }));
         }
@@ -62,7 +76,8 @@ const PunchBoardScreen = (props) => {
     const onPressOKOfModal = () => {
         let tmpSealNameList = sealedNameList;
         let tmpBoardSquares = JSON.parse(JSON.stringify(curBoardSquares));
-        tmpSealNameList.push({ id: currentSquare, name: sealedName });
+        let tmpSealed = { id: currentSquare, name: sealedName };
+        tmpSealNameList.push(tmpSealed);
         if (tmpSealNameList.length > 4) {
             Array.prototype.move = function (from, to) {
                 this.splice(to, 0, this.splice(from, 1)[0]);
@@ -76,6 +91,8 @@ const PunchBoardScreen = (props) => {
             row.map((square, j) => {
                 if (square.squareID == currentSquare) {
                     tmpBoardSquares[i][j].isEverted = true;
+                    insertNewSealedName(db, { ...tmpSealed, setting_id: curSettingID });
+                    updateBoardSquare(db, curSettingID, tmpBoardSquares[i][j]);
                     setCurBoardSquares(tmpBoardSquares);
                     dispatch(settingAction({ type: 'boardSquares', data: tmpBoardSquares }));
                 }

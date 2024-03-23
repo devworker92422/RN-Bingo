@@ -1,22 +1,58 @@
 import {
     StyleSheet,
     View,
-    BackHandler,
-    Alert
+    Alert,
+    BackHandler
 } from 'react-native';
+import { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import SQLite from 'react-native-sqlite-storage';
 import { Button, Text } from 'react-native-paper';
-import { useSelector } from 'react-redux';
+import { sealedAction } from '../features/SealedSlice';
+import { settingAction } from '../features/SettingSlice';
+import {
+    checkDBTables,
+    createSettingTable,
+    createBoardTable,
+    createSealedTable,
+    readLastSettig,
+    readBoardSquares,
+    readSealedNames,
+    deleteExcutedBoard,
+    deleteExcutedSeald,
+    finishCurrentGame,
+    insertNewSealedName,
+    dropTable
+} from '../helper/database';
+import { DB_FILE_NAME } from '../config';
+
+const db = SQLite.openDatabase(
+    {
+        name: DB_FILE_NAME,
+        location: 'default'
+    },
+    () => { console.log("Database connected!") }, //on success
+    error => console.log("Database error", error) //on error
+)
 
 const MainScreen = (props) => {
 
-    const { boardSquares, price, boardType, sealedAmount, finishFlag } = useSelector(state => state.setting);
+    const dispatch = useDispatch();
+    const { dbFlag, boardSquares, price, boardType, sealedAmount, finishFlag, curSettingID } = useSelector(state => state.setting);
+
+    const [curDBFlag, setCurDBFlag] = useState(dbFlag)
 
     const onPressSetting = () => {
         if (finishFlag == false && boardSquares.length > 0) {
             Alert.alert('Bingo', 'All of Squares are not sold , Do you want to start new game?', [
                 {
                     text: 'Yes',
-                    onPress: () => props.navigation.navigate('setting'),
+                    onPress: async () => {
+                        deleteExcutedBoard(db, curSettingID);
+                        deleteExcutedSeald(db, curSettingID);
+                        await finishCurrentGame(db, curSettingID);
+                        props.navigation.navigate('setting');
+                    },
                 },
                 {
                     text: 'No',
@@ -33,21 +69,79 @@ const MainScreen = (props) => {
             Alert.alert('Please fill the setting field');
             return;
         }
-        props.navigation.navigate('punchBoard')
+        props.navigation.navigate('punchBoard');
     }
 
-    const onPressExit = () => {
-        Alert.alert('Bingo', 'Exit Game', [
-            {
-                text: 'OK',
-                onPress: () => BackHandler.exitApp(),
-            },
-            {
-                text: 'Cancel',
-                style: 'cancel',
-            },
-        ]);
+    const onPressHistory = () => {
+        props.navigation.navigate('history');
     }
+
+    const onPressExit = async () => {
+        let tmp = await readSealedNames(db, 1);
+        console.log("all setting", tmp)
+        // setPreviousSetting(tmp);
+        // createUserTable();
+        // Alert.alert('Bingo', 'Exit Game', [
+        //     {
+        //         text: 'OK',
+        //         onPress: () => BackHandler.exitApp(),
+        //     },
+        //     {
+        //         text: 'Cancel',
+        //         style: 'cancel',
+        //     },
+        // ]);
+    }
+
+    const setPreviousSetting = (setting) => {
+        // init setting
+        dispatch(settingAction({ type: 'curSettingID', data: Number(setting.id) }));
+        dispatch(settingAction({ type: 'price', data: Number(setting.price) }));
+        dispatch(settingAction({ type: 'profit', data: Number(setting.p_rate) }));
+        dispatch(settingAction({ type: 'boardType', data: { count: setting.b_count, row: setting.b_row, col: setting.b_col } }));
+        dispatch(settingAction({ type: 'finishFlag', data: Number(setting.status) == 0 ? false : true }));
+        dispatch(settingAction({ type: 'sealedAmount', data: setting.sealed_amount }));
+
+        // init board squares
+
+        readBoardSquares(db, setting.id)
+            .then((tmpBoard) => {
+                const tmpBoardChunks = [];
+                for (let i = 0; i < tmpBoard.length; i += setting.b_col) {
+                    tmpBoardChunks.push(tmpBoard.slice(i, i + setting.b_col));
+                }
+                dispatch(settingAction({ type: 'boardSquares', data: tmpBoardChunks }));
+                readSealedNames(db, setting.id)
+                    .then((tmpSealed) => {
+                        dispatch(sealedAction({ type: 'sealedList', data: tmpSealedName }));
+                    });
+            });
+    }
+
+    useEffect(() => {
+        if (curDBFlag == null) {
+            checkDBTables(db)
+                .then((val) => {
+                    if (val == 0) {
+                        createSettingTable(db);
+                        createBoardTable(db);
+                        createSealedTable(db);
+                    } else {
+                        readLastSettig(db)
+                            .then((setting) => {
+                                if (setting != null) {
+                                    setPreviousSetting(setting);
+                                }
+                            });
+                    }
+                    setCurDBFlag(1);
+                    dispatch(settingAction({ type: 'dbFlag', data: 1 }));
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
+        }
+    }, [])
 
     return (
         <View style={styles.container}>
@@ -74,6 +168,9 @@ const MainScreen = (props) => {
             </Button>
             <Button mode='outlined' style={styles.borderSpan} onPress={onPressStart}>
                 <Text style={styles.textWeight} >Start</Text>
+            </Button>
+            <Button mode='outlined' style={styles.borderSpan} onPress={onPressHistory}>
+                <Text style={styles.textWeight} >History</Text>
             </Button>
             <Button mode='outlined' style={styles.borderSpan} onPress={onPressExit}>
                 <Text style={styles.textWeight} >Exit</Text>

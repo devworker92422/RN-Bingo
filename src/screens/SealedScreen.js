@@ -18,7 +18,23 @@ import {
     PaperProvider,
     Button
 } from "react-native-paper";
+import SQLite from 'react-native-sqlite-storage';
+import { DB_FILE_NAME } from "../config";
+import {
+    deleteExcutedBoard,
+    deleteExcutedSeald,
+    finishCurrentGame
+} from "../helper/database";
 import { settingAction } from "../features/SettingSlice";
+
+const db = SQLite.openDatabase(
+    {
+        name: DB_FILE_NAME,
+        location: 'default'
+    },
+    () => { console.log("Database connected!") }, //on success
+    error => console.log("Database error", error) //on error
+)
 
 const SealedScreen = (props) => {
 
@@ -28,18 +44,21 @@ const SealedScreen = (props) => {
     const screenHeight = Dimensions.get("screen").height;
 
     const { sealedList } = useSelector(state => state.sealed);
-    const { sealedAmount } = useSelector(state => state.setting);
+    const { sealedAmount, curSettingID } = useSelector(state => state.setting);
     const [cardSize, setCardSize] = useState(0);
     const [curSealedList, setCurSealedList] = useState([]);
     const [activeCard, setActiveCard] = useState(null);
     const [visible, setVisible] = useState(false);
 
-    const onPressSealedCard = (row, col) => {
+    const onPressSealedCard = async (row, col) => {
         if (activeCard != null)
             return;
         const tmpCard = curSealedList[row][col];
         setActiveCard(tmpCard);
         setVisible(true);
+        deleteExcutedBoard(db, curSettingID);
+        deleteExcutedSeald(db, curSettingID);
+        finishCurrentGame(db, curSettingID);
         dispatch(settingAction({ type: 'finishFlag', data: true }));
     }
 

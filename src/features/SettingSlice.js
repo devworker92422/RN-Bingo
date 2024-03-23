@@ -1,13 +1,15 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+    dbFlag: null,
     price: 0,
     winnerCount: 0,
     profit: 0,
     sealedAmount: 0,
     finishFlag: false,
     boardType: {},
-    boardSquares: []
+    boardSquares: [],
+    curSettingID: null,
 };
 
 export const SettingSlice = createSlice({

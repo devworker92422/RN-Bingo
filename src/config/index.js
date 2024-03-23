@@ -29,3 +29,4 @@ export const priceStep1 = [10, 15, 20];
 export const priceStep5 = [25, 30, 35, 40, 45, 50];
 export const priceStep10 = [55, 60, 65, 70, 75, 80];
 export const priceStep20 = [85, 90, 95, 100, 105, 110, 115, 120];
+export const DB_FILE_NAME = "Bingo.db";

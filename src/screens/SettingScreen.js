@@ -10,9 +10,21 @@ import {
 
     RadioButton
 } from 'react-native-paper';
+import SQLite from 'react-native-sqlite-storage';
+import moment from 'moment';
 import { settingAction } from '../features/SettingSlice';
 import { generateRandArray, getPriceStep, getWinAmount } from '../helper';
-import { colorPattern, BoardList, profitList, priceList, sealedRate, sealedCount } from '../config';
+import { insertNewSetting, insertBoardSquare } from '../helper/database';
+import { colorPattern, DB_FILE_NAME, BoardList, profitList, priceList, sealedRate, sealedCount } from '../config';
+
+const db = SQLite.openDatabase(
+    {
+        name: DB_FILE_NAME,
+        location: 'default'
+    },
+    () => { console.log("Database connected!") }, //on success
+    error => console.log("Database error", error) //on error
+)
 
 const SettingScreen = (props) => {
     const dispatch = useDispatch();
@@ -30,7 +42,7 @@ const SettingScreen = (props) => {
     const [boardModal, setBoardModal] = useState(false);
     const [profitModal, setProfitModal] = useState(false);
 
-    const onPressSaveBtn = () => {
+    const onPressSaveBtn = async () => {
         let tmpBoard = [];
         let tmpBoardChunks = [];
         if (price == null) {
@@ -69,10 +81,27 @@ const SettingScreen = (props) => {
         for (let i = 0; i < tmpBoard.length; i += boardType.col) {
             tmpBoardChunks.push(tmpBoard.slice(i, i + boardType.col));
         }
+
+        let setting = {
+            b_count: boardType.count,
+            b_row: boardType.row,
+            b_col: boardType.col,
+            p_rate: profit,
+            price: price,
+            p_real_amount: 0,
+            sealed_amount: sealedAmount,
+            status: 0,
+            create_at: moment().format("YYYY-MM-DD HH:MM:SS"),
+        }
+        const tmpSettingID = await insertNewSetting(db, setting);
+        const promise = tmpBoard.map((a) => {
+            insertBoardSquare(db, a, tmpSettingID);
+        });
+        await Promise.all(promise);
+        dispatch(settingAction({ type: 'curSettingID', data: tmpSettingID }));
         dispatch(settingAction({ type: 'price', data: Number(price) }));
         dispatch(settingAction({ type: 'profit', data: Number(profit) }));
         dispatch(settingAction({ type: 'boardType', data: boardType }));
-        dispatch(settingAction({ type: 'winnerCount', data: winner }));
         dispatch(settingAction({ type: 'finishFlag', data: false }));
         dispatch(settingAction({ type: 'sealedAmount', data: sealedAmount }));
         dispatch(settingAction({ type: 'boardSquares', data: tmpBoardChunks }));
