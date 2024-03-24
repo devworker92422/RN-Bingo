@@ -1,4 +1,6 @@
 
+import crypto from 'crypto';
+
 export const checkDBTables = async (db) => {
     let sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='tbl_sealed';";
     return new Promise((resolve, reject) => {
@@ -79,6 +81,45 @@ export const createSealedTable = (db) => {
         console.log("create sealed table failure ")
     });
     return result;
+}
+
+export const createUserTable = (db) => {
+    let sql = `CREATE TABLE  tbl_user (
+      "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+      "user" text(255),
+      "password" text(255)
+    );`;
+    let result = false;
+    db.executeSql(sql, [], (result) => {
+        result = true;
+        console.log("create user table success ")
+    }, (err) => {
+        result = false;
+        console.log("create user table failure ")
+    });
+    return result;
+}
+
+export const compareUserPwd = async (db, user) => {
+    let sql = "SELECT * FROM tbl_user where user = ? and password = ?";
+    let params = [user.name, crypto.createHash('md5').update(user.password).digest('hex')];
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                sql,
+                params,
+                (tx, resultSet) => {
+                    if (resultSet.rows.length > 0)
+                        return true;
+                    else
+                        return false;
+                },
+                (error) => {
+                    reject(error);
+                }
+            );
+        });
+    });
 }
 
 export const readLastSettig = async (db) => {
@@ -181,6 +222,25 @@ export const readSealedNames = async (db, setting_id) => {
     });
 }
 
+export const insertUserData = async (db, user) => {
+    let sql = "INSERT INTO tbl_user (user, password) VALUES (?, ?)";
+    let params = [user.name, crypto.createHash('md5').update(user.password).digest('hex')];
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                sql,
+                params,
+                (tx, resultSet) => {
+                    resolve(resultSet.insertId);
+                },
+                (error) => {
+                    reject(error);
+                }
+            );
+        });
+    });
+}
+
 export const insertNewSetting = async (db, setting) => {
     let sql = "INSERT INTO tbl_setting (b_count, b_row, b_col, price, p_rate, p_real_amount ,sealed_amount ,status ,create_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
     let params = [setting.b_count, setting.b_row, setting.b_col, setting.price, setting.p_rate, setting.p_real_amount, setting.sealed_amount, setting.status, setting.create_at];
@@ -251,6 +311,15 @@ export const deleteExcutedSeald = (db, setting_id) => {
     });
 }
 
+export const deleteCompletedGame = (db) => {
+    let sql = "DELETE FROM tbl_setting where status = 1 "
+    let params = [setting_id];
+    db.executeSql(sql, params, (result) => {
+        console.log("Delete excuted sealed is success")
+    }, (error) => {
+        console.log("Delete excuted sealed success is failure", error);
+    });
+}
 
 export const updateBoardSquare = async (db, setting_id, square) => {
     let sql = "UPDATE tbl_board SET isEverted = ? WHERE setting_id =? and square_id = ?";
@@ -264,6 +333,25 @@ export const updateBoardSquare = async (db, setting_id, square) => {
 
 export const updateSetting = async (db, setting) => {
 
+}
+
+export const updateUserPwd = async (db, user) => {
+    let sql = "UPDATE tbl_user SET password = ? where name = ? ";
+    let params = [crypto.createHash('md5').update(user.password).digest('hex'), user.name];
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                sql,
+                params,
+                (tx, resultSet) => {
+                    resolve(resultSet);
+                },
+                (error) => {
+                    reject(error);
+                }
+            );
+        });
+    });
 }
 
 export const finishCurrentGame = async (db, setting_id) => {
