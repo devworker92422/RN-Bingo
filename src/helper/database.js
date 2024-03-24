@@ -1,8 +1,26 @@
-
-import crypto from 'crypto';
+import md5 from "md5";
+import { DEFAULT_USER_NAME, DEFAULT_USER_PASSWORD } from "../config";
 
 export const checkDBTables = async (db) => {
     let sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='tbl_sealed';";
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                sql,
+                [],
+                (tx, resultSet) => {
+                    resolve(resultSet.rows.length);
+                },
+                (error) => {
+                    reject(error);
+                }
+            );
+        });
+    });
+}
+
+export const checkDBUsers = async (db) => {
+    let sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='tbl_user';";
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(
@@ -102,7 +120,7 @@ export const createUserTable = (db) => {
 
 export const compareUserPwd = async (db, user) => {
     let sql = "SELECT * FROM tbl_user where user = ? and password = ?";
-    let params = [user.name, crypto.createHash('md5').update(user.password).digest('hex')];
+    let params = [user.name, md5(user.password)];
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(
@@ -222,22 +240,15 @@ export const readSealedNames = async (db, setting_id) => {
     });
 }
 
-export const insertUserData = async (db, user) => {
+export const insertUserData = (db) => {
     let sql = "INSERT INTO tbl_user (user, password) VALUES (?, ?)";
-    let params = [user.name, crypto.createHash('md5').update(user.password).digest('hex')];
-    return new Promise((resolve, reject) => {
-        db.transaction((tx) => {
-            tx.executeSql(
-                sql,
-                params,
-                (tx, resultSet) => {
-                    resolve(resultSet.insertId);
-                },
-                (error) => {
-                    reject(error);
-                }
-            );
-        });
+    let params = [DEFAULT_USER_NAME, md5(DEFAULT_USER_PASSWORD)];
+    db.executeSql(sql, params, (result) => {
+        result = true;
+        console.log("insert new sealed success ")
+    }, (err) => {
+        result = false;
+        console.log("insert new sealed failure ", err)
     });
 }
 
@@ -337,7 +348,7 @@ export const updateSetting = async (db, setting) => {
 
 export const updateUserPwd = async (db, user) => {
     let sql = "UPDATE tbl_user SET password = ? where name = ? ";
-    let params = [crypto.createHash('md5').update(user.password).digest('hex'), user.name];
+    let params = [md5(user.password), user.name];
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(
