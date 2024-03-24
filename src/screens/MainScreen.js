@@ -50,7 +50,8 @@ const MainScreen = (props) => {
                     onPress: async () => {
                         deleteExcutedBoard(db, curSettingID);
                         deleteExcutedSeald(db, curSettingID);
-                        await finishCurrentGame(db, curSettingID);
+                        finishCurrentGame(db, curSettingID);
+                        initPropsAndDataBase();
                         props.navigation.navigate('setting');
                     },
                 },
@@ -77,20 +78,23 @@ const MainScreen = (props) => {
     }
 
     const onPressPwdUpdateBtn = () => {
-        props.navigation.navigate('pwdUpdate');
+        readLastSettig(db).then((val) => {
+            console.log(val)
+        })
+        // props.navigation.navigate('pwdUpdate');
     }
 
     const onPressExit = async () => {
-        // Alert.alert('Bingo', 'Exit Game', [
-        //     {
-        //         text: 'OK',
-        //         onPress: () => BackHandler.exitApp(),
-        //     },
-        //     {
-        //         text: 'Cancel',
-        //         style: 'cancel',
-        //     },
-        // ]);
+        Alert.alert('Bingo', 'Exit Game', [
+            {
+                text: 'OK',
+                onPress: () => BackHandler.exitApp(),
+            },
+            {
+                text: 'Cancel',
+                style: 'cancel',
+            },
+        ]);
     }
 
     const setPreviousSetting = (setting) => {
@@ -116,6 +120,17 @@ const MainScreen = (props) => {
                         dispatch(sealedAction({ type: 'sealedList', data: tmpSealed }));
                     });
             });
+    }
+
+    const initPropsAndDataBase = () => {
+        dispatch(settingAction({ type: 'curSettingID', data: null }));
+        dispatch(settingAction({ type: 'price', data: 0 }));
+        dispatch(settingAction({ type: 'profit', data: 0 }));
+        dispatch(settingAction({ type: 'boardType', data: {} }));
+        dispatch(settingAction({ type: 'finishFlag', data: false }));
+        dispatch(settingAction({ type: 'sealedAmount', data: 0 }));
+        dispatch(settingAction({ type: 'boardSquares', data: [] }));
+        dispatch(sealedAction({ type: 'sealedList', data: [] }));
     }
 
     useEffect(() => {
@@ -166,7 +181,7 @@ const MainScreen = (props) => {
                 ) : null
             }
             <Button mode='outlined' style={styles.borderSpan} onPress={onPressSetting}>
-                <Text style={styles.textWeight} >Setting</Text>
+                <Text style={styles.textWeight} >New Game</Text>
             </Button>
             <Button mode='outlined' style={styles.borderSpan} onPress={onPressStart}>
                 <Text style={styles.textWeight} >Start</Text>
@@ -175,7 +190,7 @@ const MainScreen = (props) => {
                 <Text style={styles.textWeight} >History</Text>
             </Button>
             <Button mode='outlined' style={styles.borderSpan} onPress={onPressPwdUpdateBtn}>
-                <Text style={styles.textWeight} >Update Password</Text>
+                <Text style={styles.textWeight} >Change Password</Text>
             </Button>
             <Button mode='outlined' style={styles.borderSpan} onPress={onPressExit}>
                 <Text style={styles.textWeight} >Exit</Text>

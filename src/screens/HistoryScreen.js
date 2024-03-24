@@ -49,6 +49,8 @@ const HistoryScreen = (props) => {
 
     const onPressConfirmBtn = () => {
         setModal(false);
+        setName("");
+        setPassword("");
         if (name == "" || password == "") {
             setErrorTxt("Invalid User Name or Password");
             clearErrorTxt();
@@ -71,7 +73,6 @@ const HistoryScreen = (props) => {
     const initTableData = () => {
         readAllSetting(db)
             .then((data) => {
-                console.log("all data ", data);
                 setItems([...data]);
             })
     }
@@ -79,7 +80,7 @@ const HistoryScreen = (props) => {
     const clearErrorTxt = () => {
         setTimeout(() => {
             setErrorTxt("")
-        }, 5000)
+        }, 8000)
     }
 
     useEffect(() => {

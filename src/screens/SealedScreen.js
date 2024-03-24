@@ -49,7 +49,7 @@ const SealedScreen = (props) => {
     const [activeCard, setActiveCard] = useState(null);
     const [visible, setVisible] = useState(false);
 
-    const onPressSealedCard = async (row, col) => {
+    const onPressSealedCard = (row, col) => {
         if (activeCard != null)
             return;
         const tmpCard = curSealedList[row][col];

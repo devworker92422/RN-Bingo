@@ -84,7 +84,7 @@ export const createSettingTable = (db) => {
 }
 
 export const createSealedTable = (db) => {
-    let sql = `CREATE TABLE  tbl_sealed (
+    let sql = `CREATE TABLE IF NOT EXISTS tbl_sealed (
       "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
       "square_id" INTEGER(11),
       "setting_id" INTEGER(11),
@@ -102,7 +102,7 @@ export const createSealedTable = (db) => {
 }
 
 export const createUserTable = (db) => {
-    let sql = `CREATE TABLE  tbl_user (
+    let sql = `CREATE TABLE IF NOT EXISTS tbl_user (
       "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
       "user" text(255),
       "password" text(255)
@@ -320,8 +320,8 @@ export const deleteExcutedSeald = (db, setting_id) => {
 }
 
 export const deleteCompletedGame = async (db) => {
-    let sql = "DELETE FROM tbl_setting where status = 1 "
-    let params = [setting_id];
+    let sql = "DELETE FROM tbl_setting where status = 1  "
+    let params = [];
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(
@@ -353,7 +353,7 @@ export const updateSetting = async (db, setting) => {
 }
 
 export const updateUserPwd = async (db, user) => {
-    let sql = "UPDATE tbl_user SET password = ? where name = ? ";
+    let sql = "UPDATE tbl_user SET password = ? where user = ? ";
     let params = [md5(user.password), user.name];
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
@@ -364,6 +364,7 @@ export const updateUserPwd = async (db, user) => {
                     resolve(resultSet);
                 },
                 (error) => {
+                    console.log("error ", error)
                     reject(error);
                 }
             );
@@ -371,23 +372,28 @@ export const updateUserPwd = async (db, user) => {
     });
 }
 
-export const finishCurrentGame = async (db, setting_id) => {
-    let sql = "UPDATE tbl_settting SET status = 1 where id = ? ";
+export const finishCurrentGame = (db, setting_id) => {
+    let sql = "UPDATE tbl_setting SET status = 1 where id = ? ";
     let params = [setting_id];
-    return new Promise((resolve, reject) => {
-        db.transaction((tx) => {
-            tx.executeSql(
-                sql,
-                params,
-                (tx, resultSet) => {
-                    resolve(resultSet);
-                },
-                (error) => {
-                    reject(error);
-                }
-            );
-        });
+    db.executeSql(sql, params, (result) => {
+        console.log("finish flag is updated")
+    }, (error) => {
+        console.log("finish flag is updated", error);
     });
+    // return new Promise((resolve, reject) => {
+    //     db.transaction((tx) => {
+    //         tx.executeSql(
+    //             sql,
+    //             params,
+    //             (tx, resultSet) => {
+    //                 resolve(resultSet);
+    //             },
+    //             (error) => {
+    //                 reject(error);
+    //             }
+    //         );
+    //     });
+    // });
 }
 
 export const dropTable = (db, table_name) => {
