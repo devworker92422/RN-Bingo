@@ -15,6 +15,8 @@ import {
     createSettingTable,
     createBoardTable,
     createSealedTable,
+    createUserTable,
+    insertUserData,
     readLastSettig,
     readBoardSquares,
     readSealedNames,
@@ -74,18 +76,21 @@ const MainScreen = (props) => {
         props.navigation.navigate('history');
     }
 
+    const onPressPwdUpdateBtn = () => {
+        props.navigation.navigate('pwdUpdate');
+    }
+
     const onPressExit = async () => {
-        createUserTable();
-        Alert.alert('Bingo', 'Exit Game', [
-            {
-                text: 'OK',
-                onPress: () => BackHandler.exitApp(),
-            },
-            {
-                text: 'Cancel',
-                style: 'cancel',
-            },
-        ]);
+        // Alert.alert('Bingo', 'Exit Game', [
+        //     {
+        //         text: 'OK',
+        //         onPress: () => BackHandler.exitApp(),
+        //     },
+        //     {
+        //         text: 'Cancel',
+        //         style: 'cancel',
+        //     },
+        // ]);
     }
 
     const setPreviousSetting = (setting) => {
@@ -118,9 +123,11 @@ const MainScreen = (props) => {
             checkDBTables(db)
                 .then((val) => {
                     if (val == 0) {
+                        createUserTable(db);
                         createSettingTable(db);
                         createBoardTable(db);
                         createSealedTable(db);
+                        insertUserData(db);
                     } else {
                         readLastSettig(db)
                             .then((setting) => {
@@ -166,6 +173,9 @@ const MainScreen = (props) => {
             </Button>
             <Button mode='outlined' style={styles.borderSpan} onPress={onPressHistory}>
                 <Text style={styles.textWeight} >History</Text>
+            </Button>
+            <Button mode='outlined' style={styles.borderSpan} onPress={onPressPwdUpdateBtn}>
+                <Text style={styles.textWeight} >Update Password</Text>
             </Button>
             <Button mode='outlined' style={styles.borderSpan} onPress={onPressExit}>
                 <Text style={styles.textWeight} >Exit</Text>

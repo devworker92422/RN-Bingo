@@ -127,10 +127,7 @@ export const compareUserPwd = async (db, user) => {
                 sql,
                 params,
                 (tx, resultSet) => {
-                    if (resultSet.rows.length > 0)
-                        return true;
-                    else
-                        return false;
+                    resolve(resultSet.rows.length)
                 },
                 (error) => {
                     reject(error);
@@ -245,10 +242,10 @@ export const insertUserData = (db) => {
     let params = [DEFAULT_USER_NAME, md5(DEFAULT_USER_PASSWORD)];
     db.executeSql(sql, params, (result) => {
         result = true;
-        console.log("insert new sealed success ")
+        console.log("insert admin user success ")
     }, (err) => {
         result = false;
-        console.log("insert new sealed failure ", err)
+        console.log("insert admin user failure ", err)
     });
 }
 
@@ -322,13 +319,22 @@ export const deleteExcutedSeald = (db, setting_id) => {
     });
 }
 
-export const deleteCompletedGame = (db) => {
+export const deleteCompletedGame = async (db) => {
     let sql = "DELETE FROM tbl_setting where status = 1 "
     let params = [setting_id];
-    db.executeSql(sql, params, (result) => {
-        console.log("Delete excuted sealed is success")
-    }, (error) => {
-        console.log("Delete excuted sealed success is failure", error);
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                sql,
+                params,
+                (tx, resultSet) => {
+                    resolve(resultSet);
+                },
+                (error) => {
+                    reject(error);
+                }
+            );
+        });
     });
 }
 
