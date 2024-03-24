@@ -78,10 +78,7 @@ const MainScreen = (props) => {
     }
 
     const onPressPwdUpdateBtn = () => {
-        readLastSettig(db).then((val) => {
-            console.log(val)
-        })
-        // props.navigation.navigate('pwdUpdate');
+        props.navigation.navigate('pwdUpdate');
     }
 
     const onPressExit = async () => {
